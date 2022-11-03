@@ -1,7 +1,6 @@
 {% set name = "accelerate" %}
 {% set version = "0.13.2" %}
 
-
 package:
   name: {{ name|lower }}
   version: {{ version }}
@@ -12,7 +11,7 @@ source:
 
 build:
   number: 0
-  noarch: python
+  skip: true  # [py<36]
   entry_points:
     - accelerate=accelerate.commands.accelerate_cli:main
     - accelerate-config=accelerate.commands.config:main
@@ -21,14 +20,14 @@ build:
 
 requirements:
   host:
+    - python
     - pip
-    - python >=3.6
   run:
+    - python
     - numpy >=1.17
     - packaging >=20.0
     - psutil
     - pytorch >=1.4.0
-    - python >=3.6
     - pyyaml
 
 test:
