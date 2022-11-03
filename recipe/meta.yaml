@@ -50,10 +50,18 @@ test:
 
 about:
   home: https://github.com/huggingface/accelerate
-  doc_url: https://huggingface.co/docs/accelerate
   summary: Training loop of PyTorch without boilerplate code
+  description: |
+    Accelerate was created for PyTorch users who like to write the training loop of PyTorch models but are reluctant to write and maintain the boilerplate code needed to use multi-GPUs/TPU/fp16.
+
+    Accelerate abstracts exactly and only the boilerplate code related to multi-GPUs/TPU/fp16 and leaves the rest of your code unchanged.
   license: Apache-2.0
   license_file: LICENSE
+  license_family: Apache
+  license_url: https://github.com/huggingface/accelerate/blob/v{{ version }}/LICENSE
+  doc_url: https://huggingface.co/docs/accelerate/index
+  doc_source_url: https://github.com/huggingface/accelerate/tree/main/docs/source
+  dev_url: https://github.com/huggingface/accelerate
 
 extra:
   recipe-maintainers:
