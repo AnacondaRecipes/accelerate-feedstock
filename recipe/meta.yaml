@@ -55,11 +55,12 @@ about:
   license: Apache-2.0
   license_file: LICENSE
   license_family: Apache
-  license_url: https://github.com/huggingface/accelerate/blob/v{{ version }}/LICENSE
   doc_url: https://huggingface.co/docs/accelerate/index
-  doc_source_url: https://github.com/huggingface/accelerate/tree/main/docs/source
   dev_url: https://github.com/huggingface/accelerate
 
 extra:
   recipe-maintainers:
     - thewchan
+  skip-lints:
+    - missing_doc_source_url
+    - missing_license_url
