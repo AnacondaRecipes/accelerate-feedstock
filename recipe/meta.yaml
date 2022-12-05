@@ -29,7 +29,7 @@ requirements:
     - numpy >=1.17
     - packaging >=20.0
     - psutil
-    - pytorch >=1.4.0
+    - pytorch >=1.4.0,<3
     - pyyaml
 
 test:
