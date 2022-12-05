@@ -31,6 +31,8 @@ requirements:
     - psutil
     - pytorch >=1.4.0,<3
     - pyyaml
+    # https://github.com/huggingface/accelerate/blob/v0.15.0/src/accelerate/utils/versions.py#L23
+    - importlib_metadata # [py<38]
 
 test:
   imports:
