@@ -1,8 +1,8 @@
-{% set name = "huggingface_accelerate" %}
+{% set name = "accelerate" %}
 {% set version = "0.15.0" %}
 
 package:
-  name: {{ name|lower }}
+  name: huggingface_{{ name|lower }}
   version: {{ version }}
 
 source:
