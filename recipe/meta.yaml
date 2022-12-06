@@ -1,4 +1,4 @@
-{% set name = "accelerate" %}
+{% set name = "huggingface_accelerate" %}
 {% set version = "0.15.0" %}
 
 package:
