@@ -1,18 +1,18 @@
 {% set name = "accelerate" %}
-{% set version = "0.13.2" %}
-
+{% set version = "0.15.0" %}
 
 package:
-  name: {{ name|lower }}
+  name: huggingface_{{ name|lower }}
   version: {{ version }}
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/accelerate-{{ version }}.tar.gz
-  sha256: e22180d7094e4c1bfb05a2b078297c222f6b4fa595fde8916946c3f377cdf019
+  sha256: 438e25a01afa6e3ffbd25353e76a68be49677c3050f10bfac7beafaf53503efc
 
 build:
   number: 0
-  noarch: python
+  # MacOS and Windows are currently missing USE_DISTRIBUTED flag in pytorch.
+  skip: true  # [py<37 or osx or win]
   entry_points:
     - accelerate=accelerate.commands.accelerate_cli:main
     - accelerate-config=accelerate.commands.config:main
@@ -21,15 +21,19 @@ build:
 
 requirements:
   host:
+    - python
     - pip
-    - python >=3.6
+    - setuptools
+    - wheel
   run:
+    - python
     - numpy >=1.17
     - packaging >=20.0
     - psutil
-    - pytorch >=1.4.0
-    - python >=3.6
+    - pytorch >=1.4.0,<3
     - pyyaml
+    # https://github.com/huggingface/accelerate/blob/v0.15.0/src/accelerate/utils/versions.py#L23
+    - importlib_metadata # [py<38]
 
 test:
   imports:
@@ -40,20 +44,23 @@ test:
     - accelerate --help
     - accelerate-config --help
     - accelerate-launch --help
-  requires:
-    - datasets
-    - pip
-    - sentencepiece
-    - transformers
-    - tokenizers !=0.11.3,<0.13,>=0.11.1
 
 about:
   home: https://github.com/huggingface/accelerate
-  doc_url: https://huggingface.co/docs/accelerate
   summary: Training loop of PyTorch without boilerplate code
+  description: |
+    Accelerate was created for PyTorch users who like to write the training loop of PyTorch models but are reluctant to write and maintain the boilerplate code needed to use multi-GPUs/TPU/fp16.
+
+    Accelerate abstracts exactly and only the boilerplate code related to multi-GPUs/TPU/fp16 and leaves the rest of your code unchanged.
   license: Apache-2.0
   license_file: LICENSE
+  license_family: Apache
+  doc_url: https://huggingface.co/docs/accelerate/index
+  dev_url: https://github.com/huggingface/accelerate
 
 extra:
   recipe-maintainers:
     - thewchan
+  skip-lints:
+    - missing_doc_source_url
+    - missing_license_url
