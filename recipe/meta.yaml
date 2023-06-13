@@ -1,5 +1,5 @@
 {% set name = "accelerate" %}
-{% set version = "0.15.0" %}
+{% set version = "0.20.3" %}
 
 package:
   name: huggingface_{{ name|lower }}
@@ -7,17 +7,19 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/accelerate-{{ version }}.tar.gz
-  sha256: 438e25a01afa6e3ffbd25353e76a68be49677c3050f10bfac7beafaf53503efc
+  sha256: 79a896978c20dac270083d42bf033f4c9a80dcdd6b946f1ca92d8d6d0f0f5ba9
 
 build:
   number: 0
-  # MacOS and Windows are currently missing USE_DISTRIBUTED flag in pytorch.
-  skip: true  # [py<37 or osx or win]
+  # Windows is currently missing USE_DISTRIBUTED flag in pytorch.
+  skip: true  # [py<37 or win]
+  # ppc64le is missing pytorch for 3.11
+  skip: true  # [py>310 and (linux and ppc64le)]
   entry_points:
     - accelerate=accelerate.commands.accelerate_cli:main
     - accelerate-config=accelerate.commands.config:main
     - accelerate-launch=accelerate.commands.launch:main
-  script: {{ PYTHON }} -m pip install . -vv
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
 
 requirements:
   host:
@@ -27,15 +29,19 @@ requirements:
     - wheel
   run:
     - python
+    # https://github.com/huggingface/accelerate/blob/665d5180fcc01d5700f7a9aa3f9bdb75c6055dce/src/accelerate/utils/torch_xla.py#L18
+    - setuptools
     - numpy >=1.17
     - packaging >=20.0
     - psutil
-    - pytorch >=1.4.0,<3
+    - pytorch >=1.6.0
     - pyyaml
-    # https://github.com/huggingface/accelerate/blob/v0.15.0/src/accelerate/utils/versions.py#L23
+    # https://github.com/huggingface/accelerate/blob/v0.20.3/src/accelerate/utils/versions.py#L23
     - importlib_metadata # [py<38]
 
 test:
+  requires:
+    - pip
   imports:
     - accelerate
     - accelerate.commands
@@ -61,6 +67,3 @@ about:
 extra:
   recipe-maintainers:
     - thewchan
-  skip-lints:
-    - missing_doc_source_url
-    - missing_license_url
