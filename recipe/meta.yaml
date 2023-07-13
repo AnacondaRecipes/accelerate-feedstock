@@ -33,10 +33,9 @@ requirements:
     - numpy >=1.17
     - packaging >=20.0
     - psutil
-    - pytorch >=1.6.0
+    - pytorch >=1.10.0
     - pyyaml
     # https://github.com/huggingface/accelerate/blob/v0.20.3/src/accelerate/utils/versions.py#L23
-    - importlib_metadata # [py<38]
 
 test:
   requires:
