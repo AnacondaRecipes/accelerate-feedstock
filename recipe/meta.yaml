@@ -37,7 +37,6 @@ requirements:
     # pytorch first built with USE_DISTRIBUTED=1 at v2.0.1 for win/osx.
     - pytorch >=2.0.1  # [win or osx]
     - pyyaml
-    # https://github.com/huggingface/accelerate/blob/v0.20.3/src/accelerate/utils/versions.py#L23
 
 test:
   requires:
