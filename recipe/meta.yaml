@@ -12,6 +12,8 @@ source:
 build:
   number: 0
   skip: true  # [py<38]
+  # s390x is missing safetensors for 0.4.4
+  skip: true  # [s390x]
   # ppc64le is missing pytorch for 3.11
   skip: true  # [py>310 and (linux and ppc64le)]
   entry_points:
