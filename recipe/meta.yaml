@@ -13,7 +13,7 @@ build:
   number: 0
   skip: true  # [py<38]
   # s390x is missing safetensors for 0.4.4
-  skip: True  # [linux and s390x]
+  skip: true  # [linux and s390x]
   # ppc64le is missing pytorch for 3.11
   skip: true  # [py>310 and (linux and ppc64le)]
   entry_points:
@@ -54,7 +54,7 @@ test:
     - accelerate --help
     - accelerate-config --help
     - accelerate-estimate-memory --help
-    - accelerate-launch --version
+    - accelerate-launch --help
     - accelerate-merge-weights --help
 
 about:
