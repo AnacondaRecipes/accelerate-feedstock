@@ -54,7 +54,7 @@ test:
     - accelerate --help
     - accelerate-config --help
     - accelerate-estimate-memory --help
-    - accelerate-launch --help
+    - accelerate-launch --version
     - accelerate-merge-weights --help
 
 about:
