@@ -50,6 +50,7 @@ test:
     - accelerate
   commands:
     - pip check
+    - set "PYTHONIOENCODING=utf8"  # [win]
     - accelerate --help
     - accelerate-config --help
     - accelerate-launch --help
