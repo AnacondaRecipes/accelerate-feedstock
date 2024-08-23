@@ -21,7 +21,6 @@ build:
     - accelerate-config=accelerate.commands.config:main
     - accelerate-estimate-memory=accelerate.commands.estimate:main
     - accelerate-launch=accelerate.commands.launch:main
-    - accelerate-merge-weights=accelerate.commands.merge:main
   script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
 
 requirements:
@@ -47,15 +46,22 @@ requirements:
 test:
   requires:
     - pip
+    - datasets
+    - evaluate
+    - pip
+    - pytest
+    - scipy
+    - scikit-learn
+    - transformers
+    - tqdm
   imports:
     - accelerate
   commands:
     - pip check
     - accelerate --help
     - accelerate-config --help
-    - accelerate-estimate-memory --help
     - accelerate-launch --help
-    - accelerate-merge-weights --help
+    - accelerate-estimate-memory --help
 
 about:
   home: https://github.com/huggingface/accelerate
