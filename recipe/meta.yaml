@@ -46,14 +46,6 @@ requirements:
 test:
   requires:
     - pip
-    - datasets
-    - evaluate
-    - pip
-    - pytest
-    - scipy
-    - scikit-learn
-    - transformers
-    - tqdm
   imports:
     - accelerate
   commands:
