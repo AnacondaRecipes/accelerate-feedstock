@@ -34,7 +34,7 @@ requirements:
     - python
     # https://github.com/huggingface/accelerate/blob/665d5180fcc01d5700f7a9aa3f9bdb75c6055dce/src/accelerate/utils/torch_xla.py#L18
     - setuptools
-    - numpy 1.17,<2.0.0
+    - numpy >=1.17,<2.0.0
     - packaging >=20.0
     - psutil
     - pytorch >=1.10.0  # [linux]
