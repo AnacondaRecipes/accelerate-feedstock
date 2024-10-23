@@ -1,27 +1,23 @@
 {% set name = "accelerate" %}
-{% set version = "0.33.0" %}
+{% set version = "1.0.1" %}
 
 package:
   name: huggingface_{{ name|lower }}
   version: {{ version }}
 
 source:
-  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/accelerate-{{ version }}.tar.gz
-  sha256: 11ba481ed6ea09191775df55ce464aeeba67a024bd0261a44b77b30fb439e26a
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: e8f95fc2db14915dc0a9182edfcf3068e5ddb2fa310b583717ad44e5c442399c
 
 build:
   number: 0
   skip: true  # [py<38]
-  # s390x is missing safetensors for 0.4.4
-  skip: true  # [linux and s390x]
-  # ppc64le is missing pytorch for 3.11
-  skip: true  # [py>310 and (linux and ppc64le)]
   entry_points:
     - accelerate=accelerate.commands.accelerate_cli:main
     - accelerate-config=accelerate.commands.config:main
     - accelerate-estimate-memory=accelerate.commands.estimate:main
     - accelerate-launch=accelerate.commands.launch:main
-    - accelerate-merge-weights=accelerate.commands.merge:main   
+    - accelerate-merge-weights=accelerate.commands.merge:main
   script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
 
 requirements:
@@ -32,17 +28,15 @@ requirements:
     - wheel
   run:
     - python
-    # https://github.com/huggingface/accelerate/blob/665d5180fcc01d5700f7a9aa3f9bdb75c6055dce/src/accelerate/utils/torch_xla.py#L18
-    - setuptools
-    - numpy >=1.17,<2.0.0
+    - numpy >=1.17,<3.0.0
     - packaging >=20.0
     - psutil
     - pytorch >=1.10.0  # [linux]
     # pytorch first built with USE_DISTRIBUTED=1 at v2.0.1 for win/osx.
     - pytorch >=2.0.1  # [win or osx]
-    - huggingface_hub >=0.21.0 
+    - huggingface_hub >=0.21.0
     - pyyaml
-    - safetensors >=0.3.1
+    - safetensors >=0.4.3
 
 test:
   requires:
