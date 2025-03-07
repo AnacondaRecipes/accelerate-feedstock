@@ -1,5 +1,5 @@
 {% set name = "accelerate" %}
-{% set version = "1.0.1" %}
+{% set version = "1.4.0" %}
 
 package:
   name: huggingface_{{ name|lower }}
@@ -7,11 +7,11 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: e8f95fc2db14915dc0a9182edfcf3068e5ddb2fa310b583717ad44e5c442399c
+  sha256: 37d413e1b64cb8681ccd2908ae211cf73e13e6e636a2f598a96eccaa538773a5
 
 build:
   number: 0
-  skip: true  # [py<38]
+  skip: true  # [py<39]
   entry_points:
     - accelerate=accelerate.commands.accelerate_cli:main
     - accelerate-config=accelerate.commands.config:main
@@ -31,7 +31,7 @@ requirements:
     - numpy >=1.17,<3.0.0
     - packaging >=20.0
     - psutil
-    - pytorch >=1.10.0  # [linux]
+    - pytorch >=2.0.0  # [linux]
     # pytorch first built with USE_DISTRIBUTED=1 at v2.0.1 for win/osx.
     - pytorch >=2.0.1  # [win or osx]
     - huggingface_hub >=0.21.0
