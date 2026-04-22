@@ -47,7 +47,11 @@ requirements:
 {% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_convert_to_fp32 " %}                           # [py>=314 or win]
 {% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_send_to_device_compiles " %}                   # [py>=314 or win]
 {% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_dynamo_extract_model_keep_torch_compile " %}   # [py>=314 or win]
-{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_dynamo_extract_model_remove_torch_compile" %}  # [py>=314 or win]
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_dynamo_extract_model_remove_torch_compile " %}  # [py>=314 or win]
+
+# Windows has no fork support; debug_launcher hard-codes start_method="fork" in these scheduler tests
+{% set skip_compile = skip_compile + "--deselect tests/test_scheduler.py::SchedulerTester::test_lambda_scheduler_not_step_with_optimizer_multiprocess " %}  # [win]
+{% set skip_compile = skip_compile + "--deselect tests/test_scheduler.py::SchedulerTester::test_lambda_scheduler_step_with_optimizer_multiprocess" %}        # [win]
 
 test:
   source_files:
@@ -71,7 +75,7 @@ test:
     # by upstream decorators (require_non_cpu, require_tpu, etc.).
     # Omit files that require optional heavy deps (bitsandbytes, FP8, trackers,
     # SageMaker, DeepSpeed, FSDP, TP) or full training examples.
-    - pytest tests/test_dataclasses.py tests/test_imports.py tests/test_logging.py tests/test_utils.py tests/test_scheduler.py tests/test_metrics.py tests/test_optimizer.py tests/test_quantization.py -v -x --no-header -rN {{ skip_compile }}
+    - pytest tests/test_dataclasses.py tests/test_imports.py tests/test_logging.py tests/test_utils.py tests/test_scheduler.py tests/test_metrics.py tests/test_optimizer.py tests/test_quantization.py -v --no-header -rf {{ skip_compile }}
 
 about:
   home: https://github.com/huggingface/accelerate
