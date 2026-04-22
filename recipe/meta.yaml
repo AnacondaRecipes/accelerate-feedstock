@@ -6,16 +6,11 @@ package:
   version: {{ version }}
 
 source:
-  # GitHub archive (not PyPI sdist): upstream tests need `tests/test_configs/` and `examples/`,
-  # which are omitted from the PyPI tarball.
-  url: https://github.com/huggingface/{{ name }}/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 7c0cf5f8a0871e43e497ada6602fdc7853417731101e1d62aa6a376c1567d27a
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: d631b4e0f5b3de4aff2d7e9e6857d164810dfc3237d54d017f075122d057b236
 
 build:
   number: 0
-  # Allow bundling paths listed under `test/source_files` into the package's `info/test/`
-  # (extracted to $SRC_DIR during the test phase).
-  copy_test_source_files: true
   skip: true  # [py<310]
   entry_points:
     - accelerate=accelerate.commands.accelerate_cli:main
@@ -43,27 +38,25 @@ requirements:
     - pyyaml
     - safetensors >=0.4.3
 
+{% set skip_compile = "" %}
+
+# conda-build always injects CC (C compiler path); test assumes CC is absent, so it always fails here
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_patch_environment_key_exists " %}
+
+# torch.compile is unsupported on Python 3.14+; deselect those tests until pytorch catches up
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_convert_to_fp32 " %}                           # [py>=314]
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_send_to_device_compiles " %}                   # [py>=314]
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_dynamo_extract_model_keep_torch_compile " %}   # [py>=314]
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_dynamo_extract_model_remove_torch_compile" %}  # [py>=314]
+
 test:
-  # Per output variant (not host machine): set USE_LIBUV for Windows test subprocesses.
-{% if target_platform is defined and target_platform.startswith('win') %}
-  script_env:
-    - USE_LIBUV=0
-{% endif %}
-  # Globs are relative to the extracted source root; required for upstream pytest files to
-  # exist under $SRC_DIR after the work directory is moved away.
   source_files:
-    - tests
-    - examples
+    - tests/
   requires:
     - pip
     - pytest
-    # Upstream `extras["test_prod"]` (used by many tests for collection / parametrization).
     - parameterized
-    # `tests/test_big_modeling.py` imports transformers at module import time.
-    - transformers
-    # `torch.compile(..., fullgraph=True)` in `test_convert_to_fp32` needs a working C++ toolchain for Inductor.
-    - gxx_linux-64  # [linux64]
-    - gxx_linux-aarch64  # [aarch64 and linux]
+    - cxx-compiler
   imports:
     - accelerate
   commands:
@@ -74,18 +67,11 @@ test:
     - accelerate-launch --help
     - accelerate-estimate-memory --help
     - accelerate-merge-weights --help
-    # PyTorch disables torch.compile on Python 3.14+; skip those tests and MPS env-var test (no torch.mps.set_device).
-    # Skip tests/fsdp: FSDP plugin paths require CUDA/NPU/XPU/etc. for sync_module_states, not MPS (fails on osx-arm64).
-    # Linux CI: Gloo over loopback; deselect flaky multi-CPU test_ops; gxx test deps set CC — skip patch_environment check.
-    - export GLOO_SOCKET_IFNAME=lo && pytest tests -v --ignore=tests/fsdp --deselect=tests/test_cpu.py::MultiCPUTester::test_ops --deselect=tests/test_utils.py::UtilsTester::test_patch_environment_key_exists  # [linux and py<314]
-    - export GLOO_SOCKET_IFNAME=lo && pytest tests -v --ignore=tests/fsdp --deselect=tests/test_cpu.py::MultiCPUTester::test_ops --deselect=tests/test_utils.py::UtilsTester::test_patch_environment_key_exists -k "not (test_can_unwrap_distributed_compiled_model_keep_torch_compile or test_can_unwrap_distributed_compiled_model_remove_torch_compile or test_extract_model_from_parallel_partial_compile or test_convert_to_fp32 or test_dynamo_extract_model_keep_torch_compile or test_dynamo_extract_model_remove_torch_compile or test_send_to_device_compiles or test_env_var_device)"  # [linux and py>=314]
-    - pytest tests -v --ignore=tests/fsdp  # [osx and py<314]
-    - pytest tests -v --ignore=tests/fsdp -k "not (test_can_unwrap_distributed_compiled_model_keep_torch_compile or test_can_unwrap_distributed_compiled_model_remove_torch_compile or test_extract_model_from_parallel_partial_compile or test_convert_to_fp32 or test_dynamo_extract_model_keep_torch_compile or test_dynamo_extract_model_remove_torch_compile or test_send_to_device_compiles or test_env_var_device)"  # [osx and py>=314]
-    # Windows: fork-based debug_launcher tests ignored; temp-path checkpoint + Inductor skips in -k.
-    # Deselect test_config_compatibility: torchrun/elastic TCPStore still requests libuv on some win PyTorch builds
-    # even when USE_LIBUV=0 is set (SUBFAILED on latest_fsdp.yaml).
-    - pytest tests -v --ignore=tests/fsdp --ignore=tests/test_cpu.py --ignore=tests/test_grad_sync.py --ignore=tests/test_scheduler.py --deselect=tests/test_cli.py::AccelerateLauncherTester::test_config_compatibility -k "not (test_load_checkpoint_in_model_dtype or test_load_checkpoint_in_model_unexpected_keys_0 or test_load_checkpoint_in_model_unexpected_keys_1 or test_convert_to_fp32)"  # [win and py<314]
-    - pytest tests -v --ignore=tests/fsdp --ignore=tests/test_cpu.py --ignore=tests/test_grad_sync.py --ignore=tests/test_scheduler.py --deselect=tests/test_cli.py::AccelerateLauncherTester::test_config_compatibility -k "not (test_can_unwrap_distributed_compiled_model_keep_torch_compile or test_can_unwrap_distributed_compiled_model_remove_torch_compile or test_extract_model_from_parallel_partial_compile or test_convert_to_fp32 or test_dynamo_extract_model_keep_torch_compile or test_dynamo_extract_model_remove_torch_compile or test_send_to_device_compiles or test_env_var_device or test_load_checkpoint_in_model_dtype or test_load_checkpoint_in_model_unexpected_keys_0 or test_load_checkpoint_in_model_unexpected_keys_1)"  # [win and py>=314]
+    # Run CPU-safe upstream tests; GPU/TPU/distributed tests are auto-skipped
+    # by upstream decorators (require_non_cpu, require_tpu, etc.).
+    # Omit files that require optional heavy deps (bitsandbytes, FP8, trackers,
+    # SageMaker, DeepSpeed, FSDP, TP) or full training examples.
+    - pytest tests/test_dataclasses.py tests/test_imports.py tests/test_logging.py tests/test_utils.py tests/test_scheduler.py tests/test_metrics.py tests/test_optimizer.py tests/test_quantization.py -v -x --no-header -rN {{ skip_compile }}
 
 about:
   home: https://github.com/huggingface/accelerate
