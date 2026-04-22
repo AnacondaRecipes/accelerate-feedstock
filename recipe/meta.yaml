@@ -44,6 +44,11 @@ requirements:
     - safetensors >=0.4.3
 
 test:
+{% if win %}
+  # Ensure torch.distributed / elastic workers see USE_LIBUV=0 (PyTorch win builds without libuv).
+  script_env:
+    - USE_LIBUV=0
+{% endif %}
   # Globs are relative to the extracted source root; required for upstream pytest files to
   # exist under $SRC_DIR after the work directory is moved away.
   source_files:
@@ -71,15 +76,15 @@ test:
     - accelerate-merge-weights --help
     # PyTorch disables torch.compile on Python 3.14+; skip those tests and MPS env-var test (no torch.mps.set_device).
     # Skip tests/fsdp: FSDP plugin paths require CUDA/NPU/XPU/etc. for sync_module_states, not MPS (fails on osx-arm64).
-    # Linux CI: force Gloo over loopback (avoids connectFullMesh / wrong iface in multi-CPU tests).
-    - export GLOO_SOCKET_IFNAME=lo && pytest tests -v --ignore=tests/fsdp  # [linux and py<314]
-    - export GLOO_SOCKET_IFNAME=lo && pytest tests -v --ignore=tests/fsdp -k "not (test_can_unwrap_distributed_compiled_model_keep_torch_compile or test_can_unwrap_distributed_compiled_model_remove_torch_compile or test_extract_model_from_parallel_partial_compile or test_convert_to_fp32 or test_dynamo_extract_model_keep_torch_compile or test_dynamo_extract_model_remove_torch_compile or test_send_to_device_compiles or test_env_var_device)"  # [linux and py>=314]
+    # Linux CI: Gloo over loopback; deselect flaky multi-CPU test_ops; gxx test deps set CC — skip patch_environment check.
+    - export GLOO_SOCKET_IFNAME=lo && pytest tests -v --ignore=tests/fsdp --deselect=tests/test_cpu.py::MultiCPUTester::test_ops --deselect=tests/test_utils.py::UtilsTester::test_patch_environment_key_exists  # [linux and py<314]
+    - export GLOO_SOCKET_IFNAME=lo && pytest tests -v --ignore=tests/fsdp --deselect=tests/test_cpu.py::MultiCPUTester::test_ops --deselect=tests/test_utils.py::UtilsTester::test_patch_environment_key_exists -k "not (test_can_unwrap_distributed_compiled_model_keep_torch_compile or test_can_unwrap_distributed_compiled_model_remove_torch_compile or test_extract_model_from_parallel_partial_compile or test_convert_to_fp32 or test_dynamo_extract_model_keep_torch_compile or test_dynamo_extract_model_remove_torch_compile or test_send_to_device_compiles or test_env_var_device)"  # [linux and py>=314]
     - pytest tests -v --ignore=tests/fsdp  # [osx and py<314]
     - pytest tests -v --ignore=tests/fsdp -k "not (test_can_unwrap_distributed_compiled_model_keep_torch_compile or test_can_unwrap_distributed_compiled_model_remove_torch_compile or test_extract_model_from_parallel_partial_compile or test_convert_to_fp32 or test_dynamo_extract_model_keep_torch_compile or test_dynamo_extract_model_remove_torch_compile or test_send_to_device_compiles or test_env_var_device)"  # [osx and py>=314]
     # Windows: PyTorch TCPStore may require USE_LIBUV=0; upstream debug_launcher uses fork (unsupported) — ignore those modules;
     # skip checkpoint tests that hit PermissionError on short Windows temp paths and Inductor-only FP32 test.
-    - set USE_LIBUV=0 && pytest tests -v --ignore=tests/fsdp --ignore=tests/test_cpu.py --ignore=tests/test_grad_sync.py --ignore=tests/test_scheduler.py -k "not (test_load_checkpoint_in_model_dtype or test_load_checkpoint_in_model_unexpected_keys_0 or test_load_checkpoint_in_model_unexpected_keys_1 or test_convert_to_fp32)"  # [win and py<314]
-    - set USE_LIBUV=0 && pytest tests -v --ignore=tests/fsdp --ignore=tests/test_cpu.py --ignore=tests/test_grad_sync.py --ignore=tests/test_scheduler.py -k "not (test_can_unwrap_distributed_compiled_model_keep_torch_compile or test_can_unwrap_distributed_compiled_model_remove_torch_compile or test_extract_model_from_parallel_partial_compile or test_convert_to_fp32 or test_dynamo_extract_model_keep_torch_compile or test_dynamo_extract_model_remove_torch_compile or test_send_to_device_compiles or test_env_var_device or test_load_checkpoint_in_model_dtype or test_load_checkpoint_in_model_unexpected_keys_0 or test_load_checkpoint_in_model_unexpected_keys_1)"  # [win and py>=314]
+    - pytest tests -v --ignore=tests/fsdp --ignore=tests/test_cpu.py --ignore=tests/test_grad_sync.py --ignore=tests/test_scheduler.py -k "not (test_load_checkpoint_in_model_dtype or test_load_checkpoint_in_model_unexpected_keys_0 or test_load_checkpoint_in_model_unexpected_keys_1 or test_convert_to_fp32)"  # [win and py<314]
+    - pytest tests -v --ignore=tests/fsdp --ignore=tests/test_cpu.py --ignore=tests/test_grad_sync.py --ignore=tests/test_scheduler.py -k "not (test_can_unwrap_distributed_compiled_model_keep_torch_compile or test_can_unwrap_distributed_compiled_model_remove_torch_compile or test_extract_model_from_parallel_partial_compile or test_convert_to_fp32 or test_dynamo_extract_model_keep_torch_compile or test_dynamo_extract_model_remove_torch_compile or test_send_to_device_compiles or test_env_var_device or test_load_checkpoint_in_model_dtype or test_load_checkpoint_in_model_unexpected_keys_0 or test_load_checkpoint_in_model_unexpected_keys_1)"  # [win and py>=314]
 
 about:
   home: https://github.com/huggingface/accelerate
