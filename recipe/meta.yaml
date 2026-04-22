@@ -6,11 +6,16 @@ package:
   version: {{ version }}
 
 source:
-  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: d631b4e0f5b3de4aff2d7e9e6857d164810dfc3237d54d017f075122d057b236
+  # GitHub archive (not PyPI sdist): upstream tests need `tests/test_configs/` and `examples/`,
+  # which are omitted from the PyPI tarball.
+  url: https://github.com/huggingface/{{ name }}/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: 7c0cf5f8a0871e43e497ada6602fdc7853417731101e1d62aa6a376c1567d27a
 
 build:
   number: 0
+  # Allow bundling paths listed under `test/source_files` into the package's `info/test/`
+  # (extracted to $SRC_DIR during the test phase).
+  copy_test_source_files: true
   skip: true  # [py<310]
   entry_points:
     - accelerate=accelerate.commands.accelerate_cli:main
@@ -39,8 +44,18 @@ requirements:
     - safetensors >=0.4.3
 
 test:
+  # Globs are relative to the extracted source root; required for upstream pytest files to
+  # exist under $SRC_DIR after the work directory is moved away.
+  source_files:
+    - tests
+    - examples
   requires:
     - pip
+    - pytest
+    # Upstream `extras["test_prod"]` (used by many tests for collection / parametrization).
+    - parameterized
+    # `tests/test_big_modeling.py` imports transformers at module import time.
+    - transformers
   imports:
     - accelerate
   commands:
@@ -51,6 +66,10 @@ test:
     - accelerate-launch --help
     - accelerate-estimate-memory --help
     - accelerate-merge-weights --help
+    # PyTorch disables torch.compile on Python 3.14+; skip those tests and MPS env-var test (no torch.mps.set_device).
+    # Skip tests/fsdp: FSDP plugin paths require CUDA/NPU/XPU/etc. for sync_module_states, not MPS (fails on osx-arm64).
+    - pytest tests -v --ignore=tests/fsdp  # [py<314]
+    - pytest tests -v --ignore=tests/fsdp -k "not (test_can_unwrap_distributed_compiled_model_keep_torch_compile or test_can_unwrap_distributed_compiled_model_remove_torch_compile or test_extract_model_from_parallel_partial_compile or test_convert_to_fp32 or test_dynamo_extract_model_keep_torch_compile or test_dynamo_extract_model_remove_torch_compile or test_send_to_device_compiles or test_env_var_device)"  # [py>=314]
 
 about:
   home: https://github.com/huggingface/accelerate
