@@ -49,8 +49,10 @@ requirements:
 {% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_dynamo_extract_model_keep_torch_compile " %}   # [py>=314 or win]
 {% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_dynamo_extract_model_remove_torch_compile " %}  # [py>=314 or win]
 
-# Windows has no fork support; every test in test_scheduler.py uses debug_launcher(start_method="fork")
-{% set skip_compile = skip_compile + "--ignore=tests/test_scheduler.py" %}  # [win]
+# Run subset of tests for faster builds.
+{% set test_files = "tests/test_dataclasses.py tests/test_imports.py tests/test_logging.py tests/test_utils.py tests/test_metrics.py tests/test_optimizer.py tests/test_quantization.py" %}
+# Every test in test_scheduler.py uses debug_launcher(start_method="fork"); Windows only supports "spawn"
+{% set test_files = test_files + " tests/test_scheduler.py" %}  # [unix]
 
 test:
   source_files:
@@ -74,7 +76,7 @@ test:
     # by upstream decorators (require_non_cpu, require_tpu, etc.).
     # Omit files that require optional heavy deps (bitsandbytes, FP8, trackers,
     # SageMaker, DeepSpeed, FSDP, TP) or full training examples.
-    - pytest tests/test_dataclasses.py tests/test_imports.py tests/test_logging.py tests/test_utils.py tests/test_scheduler.py tests/test_metrics.py tests/test_optimizer.py tests/test_quantization.py -v --no-header -rf {{ skip_compile }}
+    - pytest {{ test_files }} -v --no-header -rf {{ skip_compile }}
 
 about:
   home: https://github.com/huggingface/accelerate
