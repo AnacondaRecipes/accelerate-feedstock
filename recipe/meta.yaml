@@ -1,5 +1,5 @@
 {% set name = "accelerate" %}
-{% set version = "1.4.0" %}
+{% set version = "1.13.0" %}
 
 package:
   name: huggingface_{{ name|lower }}
@@ -7,11 +7,11 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 37d413e1b64cb8681ccd2908ae211cf73e13e6e636a2f598a96eccaa538773a5
+  sha256: d631b4e0f5b3de4aff2d7e9e6857d164810dfc3237d54d017f075122d057b236
 
 build:
   number: 0
-  skip: true  # [py<39]
+  skip: true  # [py<310]
   entry_points:
     - accelerate=accelerate.commands.accelerate_cli:main
     - accelerate-config=accelerate.commands.config:main
@@ -28,7 +28,7 @@ requirements:
     - wheel
   run:
     - python
-    - numpy >=1.17,<3.0.0
+    - numpy >=1.17
     - packaging >=20.0
     - psutil
     - pytorch >=2.0.0  # [linux]
@@ -38,9 +38,30 @@ requirements:
     - pyyaml
     - safetensors >=0.4.3
 
+{% set skip_compile = "" %}
+
+# conda-build always injects CC (C compiler path); test assumes CC is absent, so it always fails here
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_patch_environment_key_exists " %}
+
+# torch.compile is unsupported on Python 3.14+; deselect those tests until pytorch catches up
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_convert_to_fp32 " %}                           # [py>=314 or win]
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_send_to_device_compiles " %}                   # [py>=314 or win]
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_dynamo_extract_model_keep_torch_compile " %}   # [py>=314 or win]
+{% set skip_compile = skip_compile + "--deselect tests/test_utils.py::UtilsTester::test_dynamo_extract_model_remove_torch_compile " %}  # [py>=314 or win]
+
+# Run subset of tests for faster builds.
+{% set test_files = "tests/test_dataclasses.py tests/test_imports.py tests/test_logging.py tests/test_utils.py tests/test_metrics.py tests/test_optimizer.py tests/test_quantization.py" %}
+# Every test in test_scheduler.py uses debug_launcher(start_method="fork"); Windows only supports "spawn"
+{% set test_files = test_files + " tests/test_scheduler.py" %}  # [unix]
+
 test:
+  source_files:
+    - tests/
   requires:
     - pip
+    - pytest
+    - parameterized
+    - cxx-compiler
   imports:
     - accelerate
   commands:
@@ -51,6 +72,11 @@ test:
     - accelerate-launch --help
     - accelerate-estimate-memory --help
     - accelerate-merge-weights --help
+    # Run CPU-safe upstream tests; GPU/TPU/distributed tests are auto-skipped
+    # by upstream decorators (require_non_cpu, require_tpu, etc.).
+    # Omit files that require optional heavy deps (bitsandbytes, FP8, trackers,
+    # SageMaker, DeepSpeed, FSDP, TP) or full training examples.
+    - pytest {{ test_files }} -v --no-header -rf {{ skip_compile }}
 
 about:
   home: https://github.com/huggingface/accelerate
