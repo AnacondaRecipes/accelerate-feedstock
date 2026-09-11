@@ -76,8 +76,11 @@ outputs:
         - cxx-compiler
       imports:
         - accelerate
+      script_env:  # [osx]
+        - GLOO_SOCKET_IFNAME  # [osx]
       commands:
         - pip check
+        - export GLOO_SOCKET_IFNAME=lo0  # [osx]
         - set "PYTHONIOENCODING=utf8"  # [win]
         - accelerate --help
         - accelerate-config --help
