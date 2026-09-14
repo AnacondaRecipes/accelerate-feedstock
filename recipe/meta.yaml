@@ -82,7 +82,7 @@ outputs:
         - pip check
         # diag CI
         - export GLOO_SOCKET_IFNAME=lo0  # [osx]
-        - echo "SHELL SEES: $GLOO_SOCKET_IFNAME"  # [osx]
+        - echo "SHELL SEES= $GLOO_SOCKET_IFNAME"  # [osx]
         - python -c "import os; print('PYTHON SEES:', os.environ.get('GLOO_SOCKET_IFNAME'))"  # [osx]
 
         - set "PYTHONIOENCODING=utf8"  # [win]
