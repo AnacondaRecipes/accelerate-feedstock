@@ -15,8 +15,11 @@
 
 # Run subset of tests for faster builds.
 {% set test_files = "tests/test_dataclasses.py tests/test_imports.py tests/test_logging.py tests/test_utils.py tests/test_metrics.py tests/test_optimizer.py tests/test_quantization.py" %}
-# Every test in test_scheduler.py uses debug_launcher(start_method="fork"); Windows only supports "spawn"
-{% set test_files = test_files + " tests/test_scheduler.py" %}  # [unix]
+# Every test in test_scheduler.py uses debug_launcher(start_method="fork"); Windows only supports "spawn". 
+# On OSX, works locally but fails on CI. This is due to adaptor hardcoded interface naming lo vs lo0 in torch
+# gloo createDefaultDevice() after hostname resolution fails (on CI). GLOO_SOCKET_IFNAME envvar had no effect.
+# E RuntimeError: [gloo/transport/uv/device.cc:165] false. Unable to find address for: lo
+{% set test_files = test_files + " tests/test_scheduler.py" %}  # [linux]
 
 package:
   name: huggingface_{{ name|lower }}
@@ -76,15 +79,8 @@ outputs:
         - cxx-compiler
       imports:
         - accelerate
-      script_env:  # [osx]
-        - GLOO_SOCKET_IFNAME  # [osx]
       commands:
         - pip check
-        # diag CI
-        - export GLOO_SOCKET_IFNAME=lo0  # [osx]
-        - echo "SHELL SEES= $GLOO_SOCKET_IFNAME"  # [osx]
-        - python -c "import os; print('PYTHON SEES:', os.environ.get('GLOO_SOCKET_IFNAME'))"  # [osx]
-
         - set "PYTHONIOENCODING=utf8"  # [win]
         - accelerate --help
         - accelerate-config --help
