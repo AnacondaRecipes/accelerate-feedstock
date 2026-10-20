@@ -22,7 +22,8 @@
 {% set test_files = test_files + " tests/test_scheduler.py" %}  # [linux]
 
 package:
-  name: huggingface_{{ name|lower }}
+  # "-split" parent: no package of this name is built, only the outputs below.
+  name: {{ name|lower }}-split
   version: {{ version }}
 
 source:
@@ -40,7 +41,6 @@ requirements:
     - python
     - pip
     - setuptools
-    - wheel
   run:
     - python
 
@@ -59,7 +59,6 @@ outputs:
         - python
         - pip
         - setuptools
-        - wheel
       run:
         - python
         - numpy >=1.17
@@ -76,7 +75,7 @@ outputs:
         - tests/
       requires:
         - pip
-        - pytest
+        - pytest >=7.2.0
         - parameterized
         - cxx-compiler
       imports:
@@ -101,8 +100,13 @@ outputs:
       # The exact pin below differs per Python, so the string needs a py token: without it
       # all five metapackages rendered to one filename and only the py3.14 one reached
       # pkgs/main, leaving py3.10-3.13 on the old full-payload 1.13.0 build (PKG-19001).
-      string: py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+      # No hash token: python is this output's only variant input and the py token carries it.
+      string: py{{ CONDA_PY }}_{{ PKG_BUILDNUM }}
     requirements:
+      host:
+        # python in host keeps the PYTHON jinja variable (used by the accelerate output script) defined
+        # while this run-only output is rendered; it adds no direct run dependency.
+        - python
       run:
         - {{ pin_subpackage(name|lower, exact=True) }}
     test:
