@@ -30,7 +30,9 @@ source:
   sha256: 5654f8c5eaa0d4fa68b33e287a97765da6849bf6d51dcac874e73fbbddfb6134
 
 build:
-  number: 0
+  # Build 1: rebuild of 1.15.0 so the huggingface_accelerate compat output gets a
+  # per-Python build string (PKG-19001); the version itself is unchanged.
+  number: 1
   skip: true  # [py<310]
 
 requirements:
@@ -51,7 +53,7 @@ outputs:
         - accelerate-estimate-memory=accelerate.commands.estimate:main
         - accelerate-launch=accelerate.commands.launch:main
         - accelerate-merge-weights=accelerate.commands.merge:main
-      script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+      script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation  # analint: wrong_output_script_key  # inline command; outputs/x/script takes a file path
     requirements:
       host:
         - python
@@ -63,9 +65,9 @@ outputs:
         - numpy >=1.17
         - packaging >=20.0
         - psutil
-        - pytorch >=2.0.0  # [linux]
+        - pytorch >=2.0.0  # [linux] analint: cbc_dep_in_run_missing_from_host  # runtime-only, pure Python
         # pytorch first built with USE_DISTRIBUTED=1 at v2.0.1 for win/osx.
-        - pytorch >=2.0.1  # [win or osx]
+        - pytorch >=2.0.1  # [win or osx] analint: cbc_dep_in_run_missing_from_host  # runtime-only, pure Python
         - huggingface_hub >=0.21.0
         - pyyaml
         - safetensors >=0.4.3
@@ -95,12 +97,21 @@ outputs:
 
   # Keep the original output for backwards compatibility.
   - name: huggingface_{{ name|lower }}
+    build:
+      # The exact pin below differs per Python, so the string needs a py token: without it
+      # all five metapackages rendered to one filename and only the py3.14 one reached
+      # pkgs/main, leaving py3.10-3.13 on the old full-payload 1.13.0 build (PKG-19001).
+      string: py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
       run:
         - {{ pin_subpackage(name|lower, exact=True) }}
     test:
+      requires:
+        - pip
       imports:
         - accelerate
+      commands:
+        - pip check
 
 about:
   home: https://github.com/huggingface/accelerate
